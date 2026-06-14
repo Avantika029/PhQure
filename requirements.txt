@@ -10,5 +10,4 @@ Pillow
 numpy
 pandas
 matplotlib
-gdown
 safetensors

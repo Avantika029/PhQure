@@ -8,7 +8,7 @@ import os
 import cv2
 import shap
 import joblib
-import gdown
+import requests
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from urllib.parse import urlparse
@@ -106,12 +106,25 @@ FEATURE_NAMES = [
 ]
 
 # ── Download models from Drive ──────────────────────────────────
+def download_file(file_id, dest_path):
+    session  = requests.Session()
+    response = session.get("https://drive.google.com/uc?export=download",
+                           params={"id": file_id}, stream=True)
+    token = next((v for k, v in response.cookies.items()
+                  if k.startswith("download_warning")), None)
+    if token:
+        response = session.get("https://drive.google.com/uc?export=download",
+                               params={"id": file_id, "confirm": token}, stream=True)
+    with open(dest_path, "wb") as f:
+        for chunk in response.iter_content(chunk_size=32768):
+            if chunk:
+                f.write(chunk)
+
 @st.cache_resource(show_spinner=False)
 def download_models():
     for path, file_id in DRIVE_IDS.items():
         if not os.path.exists(path):
-            url = f"https://drive.google.com/uc?id={file_id}"
-            gdown.download(url, path, quiet=False, fuzzy=True)
+            download_file(file_id, path)
     return True
 
 # ── Feature extraction ──────────────────────────────────────────
