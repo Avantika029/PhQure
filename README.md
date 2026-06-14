@@ -152,7 +152,7 @@ streamlit run app.py
 
 Built as part of M.Sc. Data Science dissertation — Central University of Haryana (2024–2026).
 
-**Supervised by**: Dr. Keshav Singh Rawat
+**Supervised by**: Prof. Keshav Singh Rawat and Dr. Sunil Kumar
 
 ---
 
