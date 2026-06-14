@@ -5,10 +5,10 @@ transformers
 xgboost
 scikit-learn
 shap
-opencv-python
+opencv-python-headless
 Pillow
 numpy
 pandas
 matplotlib
-qrcode
-tqdm
+gdown
+safetensors
