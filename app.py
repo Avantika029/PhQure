@@ -111,7 +111,7 @@ def download_models():
     for path, file_id in DRIVE_IDS.items():
         if not os.path.exists(path):
             url = f"https://drive.google.com/uc?id={file_id}"
-            gdown.download(url, path, quiet=True)
+            gdown.download(url, path, quiet=False, fuzzy=True)
     return True
 
 # ── Feature extraction ──────────────────────────────────────────
