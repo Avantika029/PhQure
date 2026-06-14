@@ -1,0 +1,14 @@
+streamlit
+torch
+torchvision
+transformers
+xgboost
+scikit-learn
+shap
+opencv-python
+Pillow
+numpy
+pandas
+matplotlib
+qrcode
+tqdm
