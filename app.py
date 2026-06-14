@@ -82,15 +82,14 @@ MODELS_DIR = "models"
 DISTILBERT_DIR = os.path.join(MODELS_DIR, "distilbert_branchC")
 os.makedirs(DISTILBERT_DIR, exist_ok=True)
 
-# Google Drive file IDs
+# Google Drive file IDs (XGBoost, RF, EfficientNet only — DistilBERT loaded from HuggingFace)
 DRIVE_IDS = {
-    os.path.join(MODELS_DIR, "xgboost_branchA.pkl")              : "1AlkSjWfpwv6h8_xzRBqg_X0S-kXFsTh6",
-    os.path.join(MODELS_DIR, "randomforest_branchA.pkl")         : "1ObXYNmSy06QhRVxIsJz1j72bSvtEPR10",
-    os.path.join(MODELS_DIR, "efficientnet_branchB.pth")         : "1D7tBHu4DfgG33VpwFvIl2v1ww_mXgXIc",
-    os.path.join(DISTILBERT_DIR, "config.json")                  : "1Gb2TnV_OqK6bC3-Qz7loMkgwtPfWV4A1",
-    os.path.join(DISTILBERT_DIR, "model.safetensors")            : "1paYuJcCjhj06fqqUOCd7EAYB9V3GA_KF",
-    # tokenizer loaded from HuggingFace directly
+    os.path.join(MODELS_DIR, "xgboost_branchA.pkl")      : "1AlkSjWfpwv6h8_xzRBqg_X0S-kXFsTh6",
+    os.path.join(MODELS_DIR, "randomforest_branchA.pkl")  : "1ObXYNmSy06QhRVxIsJz1j72bSvtEPR10",
+    os.path.join(MODELS_DIR, "efficientnet_branchB.pth")  : "1D7tBHu4DfgG33VpwFvIl2v1ww_mXgXIc",
 }
+
+HF_MODEL_ID = "bishnoiavantika1/phqure-distilbert-branchc"
 
 DEVICE  = torch.device("cpu")
 MAX_LEN = 128
@@ -222,14 +221,11 @@ def load_branch_b():
 
 @st.cache_resource(show_spinner=False)
 def load_branch_c():
-    if os.path.exists(DISTILBERT_DIR) and os.path.exists(
-            os.path.join(DISTILBERT_DIR, "model.safetensors")):
-        # Load tokenizer from HuggingFace directly (avoids saved tokenizer format issues)
-        tok = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
-        mdl = DistilBertForSequenceClassification.from_pretrained(DISTILBERT_DIR)
-        mdl.eval()
-        return tok, mdl
-    return None, None
+    # Load fine-tuned model from HuggingFace Hub
+    tok = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+    mdl = DistilBertForSequenceClassification.from_pretrained(HF_MODEL_ID)
+    mdl.eval()
+    return tok, mdl
 
 # ── Prediction ──────────────────────────────────────────────────
 def predict_url(url):
