@@ -1,1 +1,1 @@
-"Model weights saved to Google Drive: MyDrive/PhQure/models/" 
+"Model weights not uploaded due to file size. Download from Google Drive link in README." 
