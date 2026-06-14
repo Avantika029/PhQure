@@ -1,50 +1,194 @@
-# Q-Comm Market Basket Analysis
+# \# PhQure — Phishing \& Quishing Detection with Explainable AI
 
-I built this to understand how recommendation engines like "you might also need" actually work behind the scenes on apps like Zepto, Blinkit, and Instamart — and to practice the full data science pipeline end to end, from raw data to a working API and dashboard.
+# 
 
-![Architecture](architecture_diagram.svg)
+# A machine learning system that detects both \*\*URL phishing\*\* and 
 
-## What's in here
+# \*\*QR code phishing (quishing)\*\* using a three-branch architecture 
 
-I used the [Instacart dataset](https://www.kaggle.com/datasets/psparks/instacart-market-basket-analysis) (3.4M orders, 49K products) as a stand-in for q-comm order data, then:
+# with SHAP and Grad-CAM explainability.
 
-- Explored the data — basket sizes, order timing, reorder habits ([notebook 01](notebooks/01_eda.ipynb))
-- Mined association rules with Apriori and FP-Growth, found 99 product pairs worth recommending ([notebook 02](notebooks/02_apriori_fpgrowth.ipynb))
-- Segmented baskets by time of day and occasion ([notebook 03](notebooks/03_segmentation.ipynb))
-- Trained Prod2Vec embeddings, ALS collaborative filtering, and a co-purchase graph ([notebook 04](notebooks/04_advanced_models.ipynb))
-- Wrapped it all in a FastAPI recommendation service + Streamlit app + Power BI dashboard
+# 
 
-## A few things I found interesting
+# Built as part of M.Sc. Data Science dissertation at 
 
-- Average basket has ~10 items, and **59% of purchases are reorders** — people are creatures of habit
-- Beverages + personal care buyers are **2.35x more likely** to also buy household items than chance would predict
-- At the category level, Apriori actually *beat* FP-Growth (5.3s vs 17.4s) — the textbook "FP-Growth is always faster" claim only holds on sparse, high-dimensional data. With just 21 categories, there's nothing for FP-Growth's tree compression to gain.
+# Central University of Haryana (2024–2026).
 
-## Running it yourself
+# 
 
-```bash
-git clone https://github.com/Avantika029/qcomm-market-basket-analysis.git
-cd qcomm-market-basket-analysis
+# \---
 
-py -3.12 -m venv venv312
-venv312\Scripts\activate
-pip install -r requirements.txt
-```
+# 
 
-Download the dataset into `data/raw/`, then run the notebooks in order (01 → 04).
+# \## What it does
 
-To start the API and dashboard:
-```bash
-python run.py                          # API at localhost:8000/docs
-streamlit run src/dashboard/app.py     # dashboard at localhost:8501
-```
+# 
 
-The Power BI dashboard is in `qcomm_mba_dashboard.pbix`.
+# \- Paste a URL → model tells you if it's phishing or legitimate
 
-## Stack
+# \- Upload a QR code image → model scans and classifies it
 
-Python, DuckDB, pandas, mlxtend, gensim, implicit, NetworkX, FastAPI, Streamlit, Power BI
+# \- Shows \*why\* it made that decision using SHAP feature importance 
 
----
+# &#x20; and Grad-CAM heatmaps
 
-Built by [Avantika](https://github.com/Avantika029) — still a work in progress, feedback welcome.
+# 
+
+# \---
+
+# 
+
+# \## Architecture
+
+# 
+
+# Three models run in parallel and their outputs are combined:
+
+# 
+
+# | Branch | Model | Input | Accuracy |
+
+# |--------|-------|-------|----------|
+
+# | A | XGBoost + Random Forest | 30 extracted URL features | 99.70% |
+
+# | B | EfficientNet-B0 (CNN) | QR code image | 93.27% |
+
+# | C | DistilBERT (fine-tuned) | Raw URL text | 99.87% F1 |
+
+# | Fusion | Logistic Regression | Branch A + C probabilities | 99.65% |
+
+# 
+
+# \---
+
+# 
+
+# \## Explainability
+
+# 
+
+# \- \*\*Branch A\*\* — SHAP values show which URL features (length, 
+
+# &#x20; special characters, domain age etc.) drove the prediction
+
+# \- \*\*Branch B\*\* — Grad-CAM heatmaps highlight which parts of the 
+
+# &#x20; QR code image the model focused on
+
+# \- \*\*Branch C\*\* — DistilBERT attention over raw URL tokens
+
+# 
+
+# \---
+
+# 
+
+# \## Tech stack
+
+# 
+
+# \- Python, PyTorch, HuggingFace Transformers
+
+# \- XGBoost, scikit-learn
+
+# \- SHAP, Grad-CAM
+
+# \- Streamlit (demo app)
+
+# \- Google Colab (T4 GPU for training)
+
+# \- SQLite (2.4M URL dataset)
+
+# 
+
+# \---
+
+# 
+
+# \## Project structure
+
+# PhQure/
+
+# 
+
+# ├── notebooks/        # Training notebooks for each branch
+
+# 
+
+# ├── src/              # Python scripts
+
+# 
+
+# ├── explainability/   # SHAP plots and Grad-CAM heatmaps
+
+# 
+
+# ├── models/           # Model weights (stored on Google Drive)
+
+# 
+
+# ├── data/             # Dataset info (not uploaded due to size)
+
+# 
+
+# ├── app.py            # Streamlit demo
+
+# 
+
+# └── requirements.txt
+
+# 
+
+# \---
+
+# 
+
+# \## Run locally
+
+# 
+
+# ```bash
+
+# git clone https://github.com/Avantika029/PhQure.git
+
+# cd PhQure
+
+# pip install -r requirements.txt
+
+# streamlit run app.py
+
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \## Dataset
+
+# 
+
+# \- \*\*URLs\*\*: \~2.4 million labelled URLs (SQLite database)
+
+# \- \*\*QR codes\*\*: 30,000 images (phishing + legitimate)
+
+# 
+
+# \---
+
+# 
+
+# \## Results
+
+# 
+
+# | Metric | Branch A | Branch B | Branch C | Fusion |
+
+# |--------|----------|----------|----------|--------|
+
+# | Accuracy | 99.70% | 93.27% | 99.87% | 99.65% |
+
+# | AUC | 0.9997 | 0.9767 | 1.0000 | 1.0000 |
+
