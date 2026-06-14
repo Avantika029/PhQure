@@ -106,18 +106,48 @@ FEATURE_NAMES = [
 
 # ── Download models from Drive ──────────────────────────────────
 def download_file(file_id, dest_path):
-    session  = requests.Session()
-    response = session.get("https://drive.google.com/uc?export=download",
-                           params={"id": file_id}, stream=True)
-    token = next((v for k, v in response.cookies.items()
-                  if k.startswith("download_warning")), None)
+    """Download from Google Drive, handling both small files and large file virus-scan pages."""
+    session = requests.Session()
+
+    # Step 1: initial request
+    response = session.get(
+        "https://drive.google.com/uc",
+        params={"export": "download", "id": file_id},
+        stream=True, timeout=60
+    )
+
+    # Step 2: handle virus-scan confirmation page for large files
+    # Google returns an HTML page with a confirm token instead of the file
+    token = None
+    for key, value in response.cookies.items():
+        if key.startswith("download_warning"):
+            token = value
+            break
+
+    # Also check response content for confirmation form (newer Drive behaviour)
+    if token is None and b"confirm" in response.content[:2000]:
+        import re as _re
+        match = _re.search(rb"confirm=([0-9A-Za-z_\-]+)", response.content[:2000])
+        if match:
+            token = match.group(1).decode()
+
     if token:
-        response = session.get("https://drive.google.com/uc?export=download",
-                               params={"id": file_id, "confirm": token}, stream=True)
+        response = session.get(
+            "https://drive.google.com/uc",
+            params={"export": "download", "id": file_id, "confirm": token},
+            stream=True, timeout=300
+        )
+
+    # Step 3: write file in chunks
     with open(dest_path, "wb") as f:
-        for chunk in response.iter_content(chunk_size=32768):
+        for chunk in response.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
             if chunk:
                 f.write(chunk)
+
+    # Step 4: verify file is not an HTML error page
+    if os.path.getsize(dest_path) < 10000 and dest_path.endswith((".pth", ".pkl", ".safetensors")):
+        os.remove(dest_path)
+        raise RuntimeError(f"Download failed for {dest_path} — file too small, likely an error page.")
 
 @st.cache_resource(show_spinner=False)
 def download_models():
