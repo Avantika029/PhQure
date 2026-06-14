@@ -89,8 +89,7 @@ DRIVE_IDS = {
     os.path.join(MODELS_DIR, "efficientnet_branchB.pth")         : "1D7tBHu4DfgG33VpwFvIl2v1ww_mXgXIc",
     os.path.join(DISTILBERT_DIR, "config.json")                  : "1Gb2TnV_OqK6bC3-Qz7loMkgwtPfWV4A1",
     os.path.join(DISTILBERT_DIR, "model.safetensors")            : "1paYuJcCjhj06fqqUOCd7EAYB9V3GA_KF",
-    os.path.join(DISTILBERT_DIR, "tokenizer.json")               : "1s6Pydw2fF9eHbm5p23z9VJAcgTbO8uoX",
-    os.path.join(DISTILBERT_DIR, "tokenizer_config.json")        : "1e1pYQXEfzkHcGY3ifKWp9vZ_z47FVn7i",
+    # tokenizer loaded from HuggingFace directly
 }
 
 DEVICE  = torch.device("cpu")
@@ -195,7 +194,8 @@ def load_branch_b():
 def load_branch_c():
     if os.path.exists(DISTILBERT_DIR) and os.path.exists(
             os.path.join(DISTILBERT_DIR, "model.safetensors")):
-        tok = DistilBertTokenizer.from_pretrained(DISTILBERT_DIR)
+        # Load tokenizer from HuggingFace directly (avoids saved tokenizer format issues)
+        tok = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
         mdl = DistilBertForSequenceClassification.from_pretrained(DISTILBERT_DIR)
         mdl.eval()
         return tok, mdl
