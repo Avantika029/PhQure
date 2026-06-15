@@ -1,23 +1,15 @@
-# Model weights
-*.pkl
-*.pt
-*.h5
-*.pth
-
-# Database
-*.db
-*.sqlite
-
-# Python cache
+venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
-
-# Large folders
-models/*.pkl
-models/*.pt
 data/
-
-# Environment
-.env
-venv/ 
+*.db
+check_*.py
+debug*.py
+compare_*.py
+verify_*.py
+02_apriori_fpgrowth.ipynb
+models/branch_a_rf.pkl
+models/branch_a_xgb.pkl
+models/fusion_meta_lr.pkl
+models/distilbert_branchC/
