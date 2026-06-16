@@ -9,7 +9,4 @@ debug*.py
 compare_*.py
 verify_*.py
 02_apriori_fpgrowth.ipynb
-models/branch_a_rf.pkl
-models/branch_a_xgb.pkl
-models/fusion_meta_lr.pkl
 models/distilbert_branchC/
