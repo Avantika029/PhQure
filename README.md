@@ -64,6 +64,11 @@ PhQure/
 
 ![ROC Curve](assets/combined_roc_curve.png)
 
+## Explainability Visualizations
+
+### Branch C — DistilBERT Token Attention
+![Branch C Attention](assets/branchC_attention.png)
+
 ## Installation
 
 ```bash
