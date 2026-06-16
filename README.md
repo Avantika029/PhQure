@@ -60,6 +60,9 @@ PhQure/
 | Fusion | `models/fusion_meta_lr.pkl` |
 
 ---
+## ROC Curve
+
+![ROC Curve](assets/combined_roc_curve.png)
 
 ## Installation
 
