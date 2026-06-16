@@ -66,6 +66,13 @@ PhQure/
 
 ## Explainability Visualizations
 
+### Branch A — SHAP Feature Importance
+![SHAP Summary](assets/branchA_shap_summary.png)
+![SHAP Bar](assets/branchA_shap_bar.png)
+
+### Branch B — Grad-CAM QR Code Analysis
+![Grad-CAM](assets/branchB_gradcam.png)
+
 ### Branch C — DistilBERT Token Attention
 ![Branch C Attention](assets/branchC_attention.png)
 
