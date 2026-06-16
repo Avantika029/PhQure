@@ -3,12 +3,15 @@ import pandas as pd
 import numpy as np
 import joblib
 import torch
+import torch.nn as nn
 import shap
 import re
+import cv2
 import matplotlib.pyplot as plt
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
 from PIL import Image
 from urllib.parse import urlparse
+from torchvision import transforms
 
 st.set_page_config(
     page_title="PhQure",
@@ -25,6 +28,18 @@ def load_models():
     models['tokenizer'] = DistilBertTokenizer.from_pretrained('bishnoiavantika1/phqure-distilbert-branchc')
     models['distilbert'] = DistilBertForSequenceClassification.from_pretrained('bishnoiavantika1/phqure-distilbert-branchc')
     models['distilbert'].eval()
+
+    try:
+        from efficientnet_pytorch import EfficientNet
+        model_b = EfficientNet.from_pretrained('efficientnet-b0')
+        model_b._fc = nn.Linear(model_b._fc.in_features, 2)
+        model_b.load_state_dict(torch.load('models/efficientnet_branchB.pth', map_location='cpu'))
+        model_b.eval()
+        models['efficientnet'] = model_b
+        models['branch_b_available'] = True
+    except Exception as e:
+        models['branch_b_available'] = False
+
     return models
 
 models = load_models()
@@ -93,12 +108,59 @@ def predict_distilbert(url):
         proba = torch.softmax(outputs.logits, dim=1)[0][1].item()
     return proba
 
+def predict_qr(image):
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    img_tensor = transform(image).unsqueeze(0)
+    with torch.no_grad():
+        outputs = models['efficientnet'](img_tensor)
+        proba = torch.softmax(outputs, dim=1)[0][1].item()
+    return proba
+
+def generate_gradcam(image, model):
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+
+    gradients = []
+    activations = []
+
+    def save_gradient(module, grad_input, grad_output):
+        gradients.append(grad_output[0].detach())
+
+    def save_activation(module, input, output):
+        activations.append(output.detach())
+
+    target_layer = model._blocks[-1]
+    h1 = target_layer.register_forward_hook(save_activation)
+    h2 = target_layer.register_backward_hook(save_gradient)
+
+    img_tensor = transform(image).unsqueeze(0)
+    output = model(img_tensor)
+    model.zero_grad()
+    output[0, 1].backward()
+
+    h1.remove()
+    h2.remove()
+
+    weights = gradients[0].mean(dim=[2, 3], keepdim=True)
+    cam = (weights * activations[0]).sum(dim=1, keepdim=True)
+    cam = torch.relu(cam).squeeze().numpy()
+    cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)
+    cam = cv2.resize(cam, (224, 224))
+    return cam
+
 st.title("🛡️ PhQure — Phishing & Quishing Detection")
 tab1, tab2, tab3 = st.tabs(["🔗 URL Analysis", "📷 QR Code Analysis", "ℹ️ About"])
 
 with tab1:
     st.header("URL Phishing Detection")
-    st.info("💡 Enter the full URL including path for best results e.g. example.com/login/verify")
+    st.info("💡 Enter the full URL including path for best results e.g. example.com/page/login")
     url_input = st.text_input("Enter a URL to analyse:", placeholder="example.com/page/login")
 
     if st.button("Analyse URL") and url_input:
@@ -143,12 +205,38 @@ with tab1:
 
 with tab2:
     st.header("QR Code Quishing Detection")
-    st.info("Upload a QR code image to detect if it leads to a phishing site.")
     uploaded_file = st.file_uploader("Upload QR Code Image", type=["png", "jpg", "jpeg"])
+
     if uploaded_file:
         image = Image.open(uploaded_file).convert('RGB')
         st.image(image, caption="Uploaded QR Code", width=300)
-        st.info("Branch B (EfficientNet-B0) model requires GPU. For full analysis, run locally with the trained model.")
+
+        if models['branch_b_available']:
+            with st.spinner("Analysing QR code..."):
+                proba = predict_qr(image)
+                pred = 1 if proba > 0.5 else 0
+
+                st.subheader("Result")
+                if pred == 1:
+                    st.error(f"⚠️ QUISHING DETECTED — Confidence: {proba*100:.1f}%")
+                else:
+                    st.success(f"✅ LEGITIMATE QR CODE — Confidence: {(1-proba)*100:.1f}%")
+
+                st.metric("Branch B (EfficientNet-B0)", f"{proba*100:.1f}%", "Phishing probability")
+
+                st.subheader("Grad-CAM Explanation")
+                cam = generate_gradcam(image, models['efficientnet'])
+                img_resized = np.array(image.resize((224, 224)))
+                heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
+                heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+                overlay = (0.6 * img_resized + 0.4 * heatmap).astype(np.uint8)
+
+                col1, col2, col3 = st.columns(3)
+                col1.image(img_resized, caption="Original", use_column_width=True)
+                col2.image(cam, caption="Grad-CAM Heatmap", use_column_width=True, clamp=True)
+                col3.image(overlay, caption="Overlay", use_column_width=True)
+        else:
+            st.info("Branch B (EfficientNet-B0) model not available in this environment.")
 
 with tab3:
     st.header("About PhQure")
