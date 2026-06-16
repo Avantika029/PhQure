@@ -10,5 +10,6 @@ scikit-learn
 xgboost
 matplotlib
 Pillow
-opencv-python
+opencv-python-headless
 qrcode
+efficientnet_pytorch
