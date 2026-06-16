@@ -22,8 +22,8 @@ def load_models():
     models['xgb'] = joblib.load('models/branch_a_xgb.pkl')
     models['rf'] = joblib.load('models/branch_a_rf.pkl')
     models['fusion'] = joblib.load('models/fusion_meta_lr.pkl')
-    models['tokenizer'] = DistilBertTokenizer.from_pretrained('models/distilbert_branchC')
-    models['distilbert'] = DistilBertForSequenceClassification.from_pretrained('models/distilbert_branchC')
+    models['tokenizer'] = DistilBertTokenizer.from_pretrained('bishnoiavantika1/phqure-distilbert-branchc'
+    models['distilbert'] = DistilBertForSequenceClassification.from_pretrained('bishnoiavantika1/phqure-distilbert-branchc')
     models['distilbert'].eval()
     return models
 
